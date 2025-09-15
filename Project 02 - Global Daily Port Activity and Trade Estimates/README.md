@@ -2,6 +2,9 @@
 
 *A compact, portfolio-ready BI project built with **SQL Server Express + SSMS** and **Power BI Desktop**. Scope: **Port of Felixstowe (UK)**.*
 
+Walkthrough : [Project Walkthough Video]('') *Youtube video will be available by 18th Sep 2025*
+
+
 ---
 
 ## 🧭 Overview
