@@ -36,11 +36,15 @@ It demonstrates: a clean **star schema** in SQL Server, **tidy/unpivot** transfo
 CREATE DATABASE Port_BI
 ```
 - Schemas: `stg`, `dim`, `fact`
-
-
+```SQL
+CREATE SCHEMA stg;
+CREATE SCHEMA dim;
+CREATE SCHEMA fact;
+```
 
 ### 2) Import → Staging
 - **Raw**: `stg.PortActivity_raw` *(via SSMS → Import Flat File)*
+- Dataset: [Daily Port Activity Data and Trade Estimates](https://www.kaggle.com/datasets/arunvithyasegar/daily-port-activity-data-and-trade-estimates/data)
 - **Typed & Cleaned**: `stg.PortActivity_clean`  
   - `TRY_CONVERT` for dates/ints/floats  
   - Trimmed text, null handling  
