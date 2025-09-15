@@ -577,18 +577,7 @@ FORMAT ( MAX ( 'dim DimDate'[Date] ), "dd MMM yyyy" ) & ")"
 
 ---
 
-## ▶️ How to Run
 
-1. **Run the SQL** in **Port_BI** exactly as written  
-   *(staging → dims → UK/Felixstowe views → unpivot → fact → reporting views)*.
-2. **Power BI Desktop** → **Get Data → SQL Server (Import)** → select:
-   - `dbo.vw_Felixstowe_FactPortDaily`
-   - `dim.DimDate`, `dim.DimPort`, `dim.DimVesselType`
-   - *(Optional)* `dbo.vw_Felixstowe_Freshness`
-3. **Model view**:
-   - Create relationships on `DateKey`, `PortKey`, `VesselTypeKey`.
-   - Mark `DimDate` as the **Date table**.
-4. **Create the DAX** measures (as defined) and build **Page 1** and **Page 2**.
 
 
 
