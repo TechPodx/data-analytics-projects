@@ -9,6 +9,13 @@
 This project turns the public “Daily Port Activity & Trade Estimates” dataset into an explainable analytics product for **Port of Felixstowe**.  
 It demonstrates: a clean **star schema** in SQL Server, **tidy/unpivot** transformation, **data-quality checks**, and clear **Power BI** storytelling.
 
+### Page 1 — **Felixstowe Ops Overview**
+
+![Dashboard Demo](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Port_BIPage_1_gif.gif)
+
+### Page 2 — **Vessel Mix & Efficiency (UK)** 
+
+![Dashboard Demo](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Port_BIPage_2-gif.gif)
 ---
 
 ## 🧰 Tools Used
@@ -241,12 +248,50 @@ GO
 ```
 
 - **Vessel Type**: `dim.DimVesselType` (fixed list: Container, Dry Bulk, General Cargo, RoRo, Tanker, Cargo Total, All)
+```SQL
+CREATE TABLE dim.DimVesselType (
+	VesselTypeKey int IDENTITY(1, 1) PRIMARY KEY,
+	VesselType nvarchar(50) NOT NULL
+);
+
+GO
+INSERT INTO dim.DimVesselType(
+	VesselType
+)
+
+VALUES ('Container'), ('Dry Bulk'), ('General Cargo'), ('RoRo'), ('Tanker'), ('Cargo Total'), ('All');
+GO
+```
 
 ### 5) Scope Views (UK & Felixstowe)
 - **UK view**: `stg.vw_PortActivity_clean_UK`  
   (filters `IS03='GBR'` or country variants)
+```SQL
+DROP TABLE IF EXISTS stg.vw_PortActivity_clean_UK
+GO
+
+CREATE VIEW stg.vw_PortActivity_clean_UK AS
+SELECT * 
+FROM stg.PortActivity_clean
+WHERE IS03 = 'GBR'
+	OR Country IN ('United Kingdom','UK','Great Britain','Britain');
+
+	GO
+```
 - **Felixstowe view**: `stg.vw_PortActivity_clean_Felixstowe`  
   (filters `IS03='GBR'` and `PortName LIKE '%FELIXSTOWE%'` or `PortId='GBFXT'`)
+```SQL
+
+CREATE VIEW stg.vw_PortActivity_clean_Felixstowe AS
+SELECT *
+FROM stg.PortActivity_clean
+WHERE IS03 = 'GBR'
+  AND (
+        UPPER(PortName) LIKE '%FELIXSTOWE%'       
+        OR UPPER(PortId) IN ('GBFXT')             
+      );
+GO
+```
 
 ### 6) **Unpivot to Tidy** (long form)
 - **Table**: `stg.PortActivity_long_Felixstowe`  
@@ -254,21 +299,122 @@ GO
   - `portcalls_*` → `PortCalls`
   - `import_*` → `ImportEst`
   - `export_*` → `ExportEst`
+```SQL
+CREATE TABLE stg.PortActivity_long_Felixstowe (
+	ActivityDate date NOT NULL,
+	PortName nvarchar(200) NOT NULL,
+	Country nvarchar(50) NULL,
+	IS03 Char(3) NULL,
+	VesselType nvarchar(50) NOT NULL,
+	PortCalls int NULL,
+	ImportEst float NULL,
+	ExportEst float NULL
+);
+GO
+
+INSERT INTO stg.PortActivity_long_Felixstowe (
+	ActivityDate, PortName, Country, IS03, VesselType, PortCalls, ImportEst, ExportEst
+)
+SELECT 
+	c.ActivityDate, c.PortName, c.Country, c.IS03, v.VesselType, v.PortCalls, v.ImportEst, v.ExportEst
+FROM stg.vw_PortActivity_clean_Felixstowe c
+CROSS APPLY (VALUES
+	('Container',      c.portcalls_container,     c.import_container,        c.export_container),
+	('Dry Bulk',       c.portcalls_dry_bulk,      c.import_dry_bulk,         c.export_dry_bulk),
+	('General Cargo',  c.portcalls_general_cargo, c.import_general_cargo,    c.export_general_cargo),
+	('RoRo',           c.portcalls_roro,          c.import_roro,             c.export_roro),
+	('Tanker',         c.portcalls_tanker,        c.import_tanker,           c.export_tanker),
+	('Cargo Total',    c.portcalls_cargo,         c.import_cargo,            c.export_cargo),
+	('All',            c.portcalls,               c.[import],                c.[export])
+) v (VesselType, PortCalls, ImportEst, ExportEst);
+GO
+```
 
 ### 7) **Build Fact**
 - **Fact**: `fact.FactPortDaily_Felixstowe`  
   Columns: `DateKey`, `PortKey`, `VesselTypeKey`, `PortCalls`, `ImportEst`, `ExportEst`  
   Indexes: `(DateKey)`, `(PortKey)`, `(VesselTypeKey)`
+```SQL
+CREATE TABLE fact.FactPortDaily_Felixstowe (
+  DateKey       int NOT NULL FOREIGN KEY REFERENCES dim.DimDate(DateKey),
+  PortKey       int NOT NULL FOREIGN KEY REFERENCES dim.DimPort(PortKey),
+  VesselTypeKey int NOT NULL FOREIGN KEY REFERENCES dim.DimVesselType(VesselTypeKey),
+  PortCalls     int   NULL,
+  ImportEst     float NULL,
+  ExportEst     float NULL
+);
+GO
+CREATE INDEX IX_FXF_Date   ON fact.FactPortDaily_Felixstowe(DateKey);
+CREATE INDEX IX_FXF_Port   ON fact.FactPortDaily_Felixstowe(PortKey);
+CREATE INDEX IX_FXF_VType  ON fact.FactPortDaily_Felixstowe(VesselTypeKey);
+GO
+INSERT INTO fact.FactPortDaily_Felixstowe (DateKey, PortKey, VesselTypeKey, PortCalls, ImportEst, ExportEst)
+SELECT
+  CONVERT(int,FORMAT(l.ActivityDate,'yyyyMMdd')) AS DateKey,
+  p.PortKey,
+  vt.VesselTypeKey,
+  l.PortCalls, 
+  l.ImportEst, 
+  l.ExportEst
+FROM stg.PortActivity_long_Felixstowe l
+JOIN dim.DimPort p        ON p.PortName = l.PortName AND ISNULL(p.IS03,'') = ISNULL(l.IS03,'')
+JOIN dim.DimVesselType vt ON vt.VesselType = l.VesselType;
+```
 
 ### 8) Data Quality / Governance
 - **Validation view**: `stg.vw_Validate_Totals_Felixstowe`  
   Confirms **sum of cargo types ≈ Cargo Total ≈ All** for Calls/Import/Export.
-- **Freshness view**: `dbo.vw_Felixstowe_Freshness` (MAX date + row count)
+```SQL
+DROP VIEW IF EXISTS stg.vw_Validate_Totals_Felixstowe
+GO
+
+CREATE VIEW stg.vw_Validate_Totals_Felixstowe AS
+SELECT ActivityDate, PortName,
+       SUM(CASE WHEN VesselType IN ('Container','Dry Bulk','General Cargo','RoRo','Tanker') THEN PortCalls END) AS SumType_PortCalls,
+       MAX(CASE WHEN VesselType='Cargo Total' THEN PortCalls END) AS CargoTotal_PortCalls,
+       MAX(CASE WHEN VesselType='All' THEN PortCalls END) AS All_PortCalls,
+
+       SUM(CASE WHEN VesselType IN ('Container','Dry Bulk','General Cargo','RoRo','Tanker') THEN ImportEst END) AS SumType_Import,
+       MAX(CASE WHEN VesselType='Cargo Total' THEN ImportEst END) AS CargoTotal_Import,
+       MAX(CASE WHEN VesselType='All' THEN ImportEst END) AS All_Import,
+
+       SUM(CASE WHEN VesselType IN ('Container','Dry Bulk','General Cargo','RoRo','Tanker') THEN ExportEst END) AS SumType_Export,
+       MAX(CASE WHEN VesselType='Cargo Total' THEN ExportEst END) AS CargoTotal_Export,
+       MAX(CASE WHEN VesselType='All' THEN ExportEst END) AS All_Export
+FROM stg.PortActivity_long_Felixstowe
+GROUP BY ActivityDate, PortName;
+
+GO
+
+```
 
 ### 9) Reporting View
 - **Power BI view**: `dbo.vw_Felixstowe_FactPortDaily`  
   Joins **Fact + DimDate + DimPort + DimVesselType** and exposes the keys for clean relationships.
+```SQL
 
+DROP VIEW IF EXISTS dbo.vw_UK_FactPortDaily
+GO
+
+CREATE VIEW dbo.vw_Felixstowe_FactPortDaily AS
+SELECT
+  d.DateKey,
+  d.[Date],
+  dp.PortKey,
+  dp.PortName,
+  dp.Country,
+  dp.IS03,
+  vt.VesselTypeKey,
+  vt.VesselType,
+  f.PortCalls,
+  f.ImportEst,
+  f.ExportEst
+FROM fact.FactPortDaily_Felixstowe f
+JOIN dim.DimDate d        ON d.DateKey = f.DateKey
+JOIN dim.DimPort dp       ON dp.PortKey = f.PortKey
+JOIN dim.DimVesselType vt ON vt.VesselTypeKey = f.VesselTypeKey;
+GO
+```
 ---
 
 ## 📊 Power BI Model
@@ -386,6 +532,8 @@ FORMAT ( MAX ( 'dim DimDate'[Date] ), "dd MMM yyyy" ) & ")"
 
 ### Page 1 — **Overview (Felixstowe)**
 
+![Dashboard Demo](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Port_BIPage_1_gif.gif)
+
 **Slicers**
 - `Year`, `Quarter`, `VesselType` (default: **All**)
 
@@ -409,7 +557,9 @@ FORMAT ( MAX ( 'dim DimDate'[Date] ), "dd MMM yyyy" ) & ")"
 
 ---
 
-### Page 2 — **Mix & Seasonality**
+### Page 2 — **Vessel Mix & Efficiency (UK)**
+
+![Dashboard Demo](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Port_BIPage_2-gif.gif)
 
 **Bar: Port Calls by VesselType**
 - Exclude **All** and **Cargo Total** for real mix analysis.
