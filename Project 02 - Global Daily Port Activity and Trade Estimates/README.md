@@ -49,14 +49,197 @@ CREATE SCHEMA fact;
   - `TRY_CONVERT` for dates/ints/floats  
   - Trimmed text, null handling  
   - Columns include: `ActivityDate, YearNum, MonthNum, DayNum, PortId, PortName, Country, IS03, portcalls_* , import_*, export_* , ObjectId`
+```SQL
+CREATE TABLE stg.PortActivity_clean (
+
+	-- Basic Details
+	ActivityDate Date NOT NULL,
+	YearNum int NULL,
+	MonthNum int NULL,
+	DayNum int NULL,
+	PortId nvarchar(50) NULL,
+	PortName nvarchar(50) NOT NULL,
+	Country nvarchar(100) NULL,
+	IS03 char(3) NULL,
+
+	-- Port Calls
+	portcalls_container     int NULL,
+	portcalls_dry_bulk      int NULL,
+	portcalls_general_cargo int NULL,
+	portcalls_roro          int NULL,
+	portcalls_tanker        int NULL,
+	portcalls_cargo         int NULL,
+	portcalls               int NULL,
+
+	-- Import
+	import_container        float NULL,
+	import_dry_bulk         float NULL,
+	import_general_cargo    float NULL,
+	import_roro             float NULL,
+	import_tanker           float NULL,
+	import_cargo            float NULL,
+	[import]                float NULL,
+
+	-- Export
+	export_container        float NULL,
+	export_dry_bulk         float NULL,
+	export_general_cargo    float NULL,
+	export_roro             float NULL,
+	export_tanker           float NULL,
+	export_cargo            float NULL,
+	[export]                float NULL,
+
+	ObjectId                nvarchar(100) NULL,
+	LoadDttm                datetime2      NOT NULL DEFAULT SYSUTCDATETIME()
+
+);
+INSERT INTO stg.PortActivity_clean (
+	ActivityDate, YearNum, MonthNum, DayNum, PortId, PortName, Country, IS03, 
+	portcalls_container, portcalls_dry_bulk, portcalls_general_cargo, portcalls_roro, portcalls_tanker, portcalls_cargo, portcalls, 
+	import_container, import_dry_bulk, import_general_cargo, import_roro, import_tanker, import_cargo, [import], 
+	export_container, export_dry_bulk, export_general_cargo, export_roro, export_tanker, export_cargo, [export], ObjectId
+)
+SELECT 
+	TRY_CONVERT(date, [date]),	
+	TRY_CONVERT(int, [year]),
+	TRY_CONVERT(int, [month]),
+	TRY_CONVERT(int, [day]),	
+	NULLIF(LTRIM(RTRIM([portid])), ''),
+	NULLIF(LTRIM(RTRIM([portname])), ''),
+	NULLIF(LTRIM(RTRIM([country])), ''),
+	TRY_CONVERT(char(3), [ISO3]),
+
+	TRY_CONVERT(int, [portcalls_container]),
+	TRY_CONVERT(int, [portcalls_dry_bulk]),
+	TRY_CONVERT(int, [portcalls_general_cargo]),
+	TRY_CONVERT(int, [portcalls_roro]),
+	TRY_CONVERT(int, [portcalls_tanker]),
+	TRY_CONVERT(int, [portcalls_cargo]),
+	TRY_CONVERT(int, [portcalls]),
+
+	TRY_CONVERT(float, [import_container]),
+	TRY_CONVERT(float, [import_dry_bulk]),
+	TRY_CONVERT(float, [import_general_cargo]),
+	TRY_CONVERT(float, [import_roro]),
+	TRY_CONVERT(float, [import_tanker]),
+	TRY_CONVERT(float, [import_cargo]),
+	TRY_CONVERT(float, [import]),
+
+	TRY_CONVERT(float, [export_container]),
+	TRY_CONVERT(float, [export_dry_bulk]),
+	TRY_CONVERT(float, [export_general_cargo]),
+	TRY_CONVERT(float, [export_roro]),
+	TRY_CONVERT(float, [export_tanker]),
+	TRY_CONVERT(float, [export_cargo]),
+	TRY_CONVERT(float, [export]),
+	[ObjectId]
+FROM stg.PortActivity_raw;
+```
 
 ### 3) Sanity Checks
 - Min/Max date, total rows
+```SQL
+SELECT
+	MIN(ActivityDate) AS FirstDate,
+	MAX(ActivityDate) AS LastDate,
+	COUNT(*) AS RowsALL
+FROM stg.PortActivity_clean
+```
 - Null checks for critical fields (`ActivityDate`, `PortName`)
+```SQL
+SELECT
+	SUM(CASE WHEN ActivityDate IS NULL THEN 1 ELSE 0 END) AS NullDate,
+	SUM(CASE WHEN PortName IS NULL THEN 1 ELSE 0 END) AS NullPort
+FROM stg.PortActivity_clean;
+```
 
 ### 4) Dimensions
 - **Date**: `dim.DimDate` (Year/Month/MonthName/Day/Quarter/ISOWeek/DayOfWeek)
+```SQL
+IF OBJECT_ID('dim.DimDate') IS NOT NULL
+	DROP TABLE dim.DimDate
+
+GO
+
+ALTER TABLE dim.DimDate 
+ADD DayOfWeek NVARCHAR(10) NULL;
+
+CREATE TABLE dim.DimDate (
+	DateKey int NOT NULL PRIMARY KEY, 
+	[Date] date NOT NULL,
+	[Year] int NOT NULL,
+	[Month] int NOT NULL,
+	[MonthName] nvarchar(20) NOT NULL,
+	[Day] int NOT NULL,
+	[Quater] int NOT NULL,
+	ISOWeek int NOT NULL
+);
+
+GO
+
+WITH d AS (
+	SELECT MIN(ActivityDate) StartDate, MAX(ActivityDate) EndDate
+	FROM stg.PortActivity_clean
+), 
+cal AS (
+	SELECT StartDate
+	FROM d
+	UNION ALL
+
+	SELECT DATEADD(day, 1, cal.StartDate) 
+	FROM cal, d 
+	WHERE cal.StartDate < d.EndDate
+)
+INSERT INTO dim.DimDate
+SELECT 
+	CONVERT (int, FORMAT(StartDate, 'yyyyMMdd')) AS DateKey,
+	StartDate AS [Date],
+	YEAR(StartDate) AS [Year] ,
+	MONTH(StartDate) AS [Month],
+	DATENAME(month, StartDate) AS [MonthName],
+	DAY(StartDate) AS [Day],
+	DATEPART(Quarter, StartDate) AS [Quarter],
+	DATEPART(ISO_WEEK, StartDate) AS ISOWeek
+FROM cal 
+OPTION (MAXRECURSION 32767);
+
+UPDATE dim.DimDate
+SET DayOfWeek = DATENAME(WEEKDAY, [Date]);
+```
+
 - **Port**: `dim.DimPort` (note: `IS03` is the 3-letter ISO code column in your script)
+```SQL
+DROP TABLE IF EXISTS dim.DimPort ;
+GO
+
+TRUNCATE TABLE dim.DimPort
+GO
+
+CREATE TABLE dim.DimPort (
+	PortKey int IDENTITY(1, 1) PRIMARY KEY, 
+	PortId nvarchar(50) NULL,
+	PortName nvarchar(200) NOT NULL,
+	Country nvarchar(50) NULL,
+	IS03 char(3) NULL
+);
+GO
+INSERT INTO dim.DimPort (PortId, PortName, Country, IS03)
+SELECT c.PortId, c.PortName, c.Country, c.IS03
+FROM (
+  SELECT DISTINCT
+    NULLIF(LTRIM(RTRIM(PortId)),'') AS PortId,
+    NULLIF(LTRIM(RTRIM(PortName)),'') AS PortName,
+    NULLIF(LTRIM(RTRIM(Country)),'') AS Country,
+    IS03
+  FROM stg.vw_PortActivity_clean_Felixstowe
+) c
+LEFT JOIN dim.DimPort p
+  ON ISNULL(p.PortId,'') = ISNULL(c.PortId,'')
+ AND p.PortName = c.PortName
+WHERE p.PortKey IS NULL;
+GO
+```
+
 - **Vessel Type**: `dim.DimVesselType` (fixed list: Container, Dry Bulk, General Cargo, RoRo, Tanker, Cargo Total, All)
 
 ### 5) Scope Views (UK & Felixstowe)
