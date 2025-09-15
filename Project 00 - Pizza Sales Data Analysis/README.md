@@ -5,7 +5,7 @@ This project analyzes pizza sales data to uncover key insights into business per
 The analysis was performed using **SQL** for data processing and **Power BI** for visualization.  
 The final dashboard provides an interactive way to explore sales trends, customer behavior, and product performance.
 
-### Page 1 Home: [Alt Text](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Pizza_Home-gif.gif)
+### Page 1 Home: ![Dashboard Demo](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Pizza_Home-gif.gif)
 
 ---
 
