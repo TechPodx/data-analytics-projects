@@ -32,7 +32,12 @@ It demonstrates: a clean **star schema** in SQL Server, **tidy/unpivot** transfo
 
 ### 1) Database & Schemas
 - `CREATE DATABASE Port_BI;`
+```SQL
+CREATE DATABASE Port_BI
+```
 - Schemas: `stg`, `dim`, `fact`
+
+
 
 ### 2) Import → Staging
 - **Raw**: `stg.PortActivity_raw` *(via SSMS → Import Flat File)*
@@ -119,8 +124,172 @@ Trade Balance (EX - IM) :=
 
 Trade Tons per Call :=
 DIVIDE ( [Trade Volume Total], [Port Calls] )
+```
+
+### **Time Windows**
+```DAX
+
+Port Call 7-Days :=
+CALCULATE (
+    [Port Calls],
+    DATESINPERIOD ( 'dim DimDate'[Date], MAX ( 'dim DimDate'[Date] ), -7, DAY )
+)
+
+Port Calls MTD :=
+CALCULATE ( [Port Calls], DATESMTD ( 'dim DimDate'[Date] ) )
+
+Port Calls YTD :=
+CALCULATE ( [Port Calls], DATESYTD ( 'dim DimDate'[Date] ) )
+
+Trade MTD :=
+CALCULATE ( [Trade Volume Total], DATESMTD ( 'dim DimDate'[Date] ) )
+
+Trade YTD :=
+CALCULATE ( [Trade Volume Total], DATESYTD ( 'dim DimDate'[Date] ) )
+
+```
+
+### **Shares & Growth**
+```DAX
+
+Import Share % :=
+DIVIDE ( [Import Volume], [Trade Volume Total] )
+
+Export Share % :=
+DIVIDE ( [Export Volume], [Trade Volume Total] )
+
+Trade Volume YoY % :=
+VAR Curr = [Trade Volume Total]
+VAR Prev = CALCULATE ( [Trade Volume Total], SAMEPERIODLASTYEAR ( 'dim DimDate'[Date] ) )
+RETURN IF ( NOT ISBLANK ( Prev ), DIVIDE ( Curr - Prev, Prev ) )
+
+Trade YTD YoY % :=
+VAR Curr = [Trade YTD]
+VAR Prev = CALCULATE ( [Trade YTD], SAMEPERIODLASTYEAR ( 'dim DimDate'[Date] ) )
+RETURN IF ( NOT ISBLANK ( Prev ), DIVIDE ( Curr - Prev, Prev ) )
+
+```
+
+### **Vessel Mix (Page 2)**
+```DAX
+
+Container Share % :=
+VAR CargoCalls =
+    CALCULATE ( [Port Calls], NOT 'dim DimVesselType'[VesselType] IN {"All","Cargo Total"} )
+RETURN
+DIVIDE (
+    CALCULATE ( [Port Calls], 'dim DimVesselType'[VesselType] = "Container" ),
+    CargoCalls
+)
+```
+
+### **Titles & Meta**
+```DAX
+
+Data Through :=
+MAX ( 'vw_Felixstowe_FactPortDaily'[Date] )
+
+Title Felixstowe :=
+"Port Activity & Trade Intelligence — Felixstowe  (" &
+FORMAT ( MIN ( 'dim DimDate'[Date] ), "dd MMM yyyy" ) & " → " &
+FORMAT ( MAX ( 'dim DimDate'[Date] ), "dd MMM yyyy" ) & ")"
+```
+
+## 📈 Power BI Pages
+
+### Page 1 — **Overview (Felixstowe)**
+
+**Slicers**
+- `Year`, `Quarter`, `VesselType` (default: **All**)
+
+**KPI Cards**
+- **Port Calls**
+- **Trade Volume Total**
+- **Trade Tons per Call**
+- **Trade Balance (EX - IM)**
+- **Trade YTD YoY %**
+- *(Optional)* **Data Through**
+
+**Trend (Dual-Axis Line)**
+- **X:** `DimDate[Date]`
+- **Y1:** `Port Calls` *(with `Port Call 7-Days` helper line)*
+- **Y2:** `Trade Volume Total`
+
+**Matrix (VesselType Detail)**
+- **Rows:** `VesselType`
+- **Values:** `Port Calls`, `Export Volume`, `Import Volume`, `Trade Volume Total`, `Trade Tons per Call`
+- *Includes “All” and “Cargo Total” rows for reconciliation.*
+
+---
+
+### Page 2 — **Mix & Seasonality**
+
+**Bar: Port Calls by VesselType**
+- Exclude **All** and **Cargo Total** for real mix analysis.
+
+**Heatmap (Matrix): Seasonality**
+- **Rows:** `MonthName`
+- **Columns:** `DayOfWeek`
+- **Values:** `Port Calls`
+- Apply **conditional formatting (color scale)** to surface busy/quiet periods.
+
+**Waterfall: Monthly Trade Balance**
+- **Category:** `YearMonth` *(created from `DimDate[Date]` and sorted by a numeric key)*
+- **Y:** `Trade Balance (EX - IM)`
+- **Tooltips:** `Import Volume`, `Export Volume`, `Trade Volume Total`
+
+---
+
+## ▶️ How to Run
+
+1. **Run the SQL** in **Port_BI** exactly as written  
+   *(staging → dims → UK/Felixstowe views → unpivot → fact → reporting views)*.
+2. **Power BI Desktop** → **Get Data → SQL Server (Import)** → select:
+   - `dbo.vw_Felixstowe_FactPortDaily`
+   - `dim.DimDate`, `dim.DimPort`, `dim.DimVesselType`
+   - *(Optional)* `dbo.vw_Felixstowe_Freshness`
+3. **Model view**:
+   - Create relationships on `DateKey`, `PortKey`, `VesselTypeKey`.
+   - Mark `DimDate` as the **Date table**.
+4. **Create the DAX** measures (as defined) and build **Page 1** and **Page 2**.
 
 
 
-dddd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
