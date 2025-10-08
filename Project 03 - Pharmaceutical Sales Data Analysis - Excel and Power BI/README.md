@@ -6,8 +6,22 @@ This project delivers an **executive-ready sales intelligence solution** for pha
 ### Page 1 - Executive Overview
 ![image1](https://github.com/TechPodx/Style-Repo/blob/f665f16854b56b768c07402dca8702e40ea60985/Gif/Pharmaceutical%20Sales%20Data%20Analysis_gif_1.gif)
 
-### Page 1 - Forecast & Seasonality
+**1. Sales Overview**
+
+KPIs: Total Sales, Top ATC Code, Lowest ATC Code
+Bar chart: Total Sales by ATC Codes
+Line chart: Total Sales over Years
+Mix Share Matrix (% contribution per ATC by year)
+Table: Top 3 Risers & Fallers
+
+### Page 2 - Forecast & Seasonality
 ![image1](https://github.com/TechPodx/Style-Repo/blob/f665f16854b56b768c07402dca8702e40ea60985/Gif/Pharmaceutical%20Sales%20Data%20Analysis_gif_2.gif)
+
+**2. Forecasting**
+
+KPIs: Upper Forecast, Average Forecast, Lowest Forecast
+Table: Forecast estimates by Month (Upper, Avg, Lower)
+Line chart: Forecasted Sales over Years (upper/avg/lower lines)
 
 ## Access to Walkthrough Video: [Project Walkthough Video]()
 ## Access to Live BI Dashboard: [BI Dashboard](https://app.powerbi.com/groups/me/reports/3c199043-3f01-489c-8c54-f57f66b14fd3?ctid=fe8ccb52-ca53-49de-a5b4-50faf33a9cc2&pbi_source=linkShare)
@@ -172,50 +186,6 @@ CALCULATE(
 Upper Forecast Sales = SUM('Forecast Summery'[Forecast (UPPER)] )
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-📈 Dashboard Pages
-1. Sales Overview
-
-KPIs: Total Sales, Top ATC Code, Lowest ATC Code
-
-Bar chart: Total Sales by ATC Codes
-
-Line chart: Total Sales over Years
-
-Mix Share Matrix (% contribution per ATC by year)
-
-Table: Top 3 Risers & Fallers
-
-📷 Screenshot:
-
-
-2. Forecasting
-
-KPIs: Upper Forecast, Average Forecast, Lowest Forecast
-
-Table: Forecast estimates by Month (Upper, Avg, Lower)
-
-Line chart: Forecasted Sales over Years (upper/avg/lower lines)
-
-📷 Screenshot:
 
 
 
