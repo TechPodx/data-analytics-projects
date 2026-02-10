@@ -2,7 +2,7 @@
 
 ![Executive Overview](https://github.com/TechPodx/Style-Repo/blob/main/Images/energy_gif.gif)
 
-## 📽️Link to the demonstration: https://youtu.be/tO1_Sv4kwm4
+## 📽️Link to the demonstration: 
 
 
 Power BI portfolio project demonstrating **24/7 renewable matching**, **generation mix analysis**, and **market-based emissions** reporting using half-hourly GB data.
