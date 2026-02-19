@@ -292,10 +292,10 @@ GO
 
 -- Unpivot to tidy: Turn the wide row into one row per vesselType per date/port
 
-DROP TABLE IF EXISTS  stg.PortActivity_long
+DROP TABLE IF EXISTS  stg.PortActivity_long_Felixstowe
 GO
 
-CREATE TABLE stg.vw_Validate_Totals_Felixstowe (
+CREATE TABLE stg.PortActivity_long_Felixstowe (
 	ActivityDate date NOT NULL,
 	PortName nvarchar(200) NOT NULL,
 	Country nvarchar(50) NULL,
@@ -326,12 +326,12 @@ GO
 
 -- Check data
 
-SELECT TOP 10 * FROM stg.vw_Validate_Totals_Felixstowe
+SELECT TOP 10 * FROM stg.PortActivity_long_Felixstowe
 GO
 
 -- Validation view: Do your totals match the sum of types?
 
-DROP VIEW IF EXISTS stg.vw_Validate_Totals
+DROP VIEW IF EXISTS stg.vw_Validate_Totals_Felixstowe
 GO
 
 CREATE VIEW stg.vw_Validate_Totals_Felixstowe AS
