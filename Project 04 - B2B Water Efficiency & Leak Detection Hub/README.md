@@ -29,7 +29,7 @@ The raw data consists of internally generated extracts simulating PureVale Water
 
 * **Source Files:**
   * `PureVale_Water_Customers.csv` (1000 records: Demographics, Meter Types, FTE, RTS%)
-  * `Fact_WaterUsage.csv` (5000+ records: Daily volumes, Reading dates, Quality flags)
+  * `Fact_WaterUsage.csv` (1000 records: Daily volumes, Reading dates, Quality flags)
 * **Target Data Model:** The raw flat files will be processed via SQL (ETL) into a Star Schema consisting of:
   * `Dim_Customer`
   * `Dim_Tariff` (Created in SQL to handle regional pricing)
