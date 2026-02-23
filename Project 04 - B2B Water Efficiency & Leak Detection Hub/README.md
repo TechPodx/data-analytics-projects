@@ -73,13 +73,13 @@ I handled the data ingestion using SQL Server Management Studio (SSMS).
 
 * **Transform & Load:** I then wrote SQL scripts to move this data into permanent tables (`Dim_Customer` and `Fact_WaterUsage`), applying strict data types (like `DECIMAL` for percentages and `DATE` for calendar dates) to prevent formatting errors downstream. I also established a Primary/Foreign Key relationship linking the `CompanyId` in the Fact table to the `CustomerId` in the Dimension table.
 
-## 2. Dynamic Tariff Modeling (Commercial Logic)
+### 2. Dynamic Tariff Modeling (Commercial Logic)
 
 One of the main goals of this project was to simulate real-world B2B utility billing. Real water companies don't charge a single flat rate for every customer across the country. 
 
 To handle this, I manually created a `Dim_Tariff` table directly in SQL. This table stores specific volumetric rates and daily fixed charges based on different UK regions (Anglian, Northumbrian, Thames). By mapping our customer cities to these regions, I built a foundation that allows Power BI to calculate accurate, localized financial costs.
 
-## 3. SQL Scripts Used
+### 3. SQL Scripts Used
 
 Below is the SQL architecture used to build the Database, tables, load the pricing data, and create the final Master View that connects to Power BI.
 
@@ -210,19 +210,19 @@ With the data cleaned and structured in SQL, the final step was to build the rep
 
 The goal here was to move beyond basic reporting and build a tool that actually drives business value: highlighting inefficiencies, calculating accurate costs, and proactively catching leaks.
 
-## 1. Data Modeling & Power Query
+### 1. Data Modeling & Power Query
 
 
 Before writing any calculations, I finalized the data model. Using Power Query, I mapped the customer cities to their correct utility regions. In the Model View, I connected the tables into a standard Star Schema, linking the `Fact_WaterUsage` table to the `Dim_Customer` and `Dim_Tariff` tables using one-to-many relationships. 
 
 To handle time-intelligence calculations, I also generated a dedicated `Dim_Date` table using DAX.
 
-## 2. Dashboard Design & Stakeholder UX
+### 2. Dashboard Design & Stakeholder UX
 The dashboard is split into two targeted pages:
 * **Executive Overview:** Designed for high-level monitoring. It features KPI cards for total volume and revenue, alongside donut charts breaking down network efficiency by Industry Type and tracking data quality (Actual vs. Estimated reads).
 * **Account Manager Self-Service (Leak Detection):** A deep-dive page where Account Managers can select specific clients to review their daily consumption trends and benchmark their efficiency against similar-sized companies.
 
-## 3. Key DAX Calculations
+### 3. Key DAX Calculations
 To answer the core business questions, I wrote several DAX measures. 
 
 Rather than just summing up volume, I wanted to demonstrate accurate financial modeling. I used `SUMX` and `RELATED` to iterate through the fact table, multiplying daily usage by the specific regional rates stored in the Tariff dimension.
