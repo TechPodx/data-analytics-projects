@@ -224,23 +224,35 @@ To handle time-intelligence calculations, I also generated a dedicated `Dim_Date
 
 ```dax
 Dim_Date = 
-ADDCOLUMNS(
-    CALENDAR(MIN(Fact_waterUsage[ReadingDate]), MAX(Fact_waterUsage[ReadingDate])),
-    "YEAR", YEAR([Date]),
-    "Month Name", FORMAT([DATE], "MMMM"),
+ADDCOLUMNS (
+    CALENDAR (MIN(Fact_WaterUsage[ReadingDate]), MAX(Fact_WaterUsage[ReadingDate])),
+    "Year", YEAR([Date]),
+    "Month Name", FORMAT([Date], "MMMM"),
     "Month Number", MONTH([Date])
 )
 ```
 
 ### 2. Dashboard Design & Stakeholder UX
+
 The dashboard is split into two targeted pages:
+
 * **Executive Overview:** Designed for high-level monitoring. It features KPI cards for total volume and revenue, alongside donut charts breaking down network efficiency by Industry Type and tracking data quality (Actual vs. Estimated reads).
+  
 * **Account Manager Self-Service (Leak Detection):** A deep-dive page where Account Managers can select specific clients to review their daily consumption trends and benchmark their efficiency against similar-sized companies.
 
-### 3. Key DAX Calculations
+### 3. Key DAX Measures
+
 To answer the core business questions, I wrote several DAX measures. 
 
 Rather than just summing up volume, I wanted to demonstrate accurate financial modeling. I used `SUMX` and `RELATED` to iterate through the fact table, multiplying daily usage by the specific regional rates stored in the Tariff dimension.
+
+**Total Water Used**
+
+```dax
+Total Volume (m3) = SUM(Fact_WaterUsage[DailyVolume_m3])
+```
+
+***The Financial Cost***
 
 ```dax
 Total Volume (m3) = SUM(Fact_WaterUsage[DailyVolume_m3])
