@@ -162,8 +162,8 @@ GO
 
 /*
 We can drop Temporaty Tables if needed 
-DROP TABLE Dim_Customer_Temp;
-DROP TABLE Fact_WaterUsage_Temp;
+DROP TABLE stg.PureVale_Water_Customers_Temp;
+DROP TABLE stg.Fact_WaterUsage_Temp;
 */
 
 
