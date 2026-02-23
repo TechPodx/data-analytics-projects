@@ -81,14 +81,32 @@ To handle this, I manually created a `Dim_Tariff` table directly in SQL. This ta
 
 ## 3. SQL Scripts Used
 
-Below is the SQL architecture used to build the tables, load the pricing data, and create the final Master View that connects to Power BI.
+Below is the SQL architecture used to build the Database, tables, load the pricing data, and create the final Master View that connects to Power BI.
 
 ```SQL
 -- *************************************************************************
 -- PureVale Water - Database Setup & Architecture
 -- *************************************************************************
 
--- 1. Customer Dimension Table
+-- Drop the database if exists (DO NOT RUN UNLESS NECESSARY)
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'PureValeWater')
+BEGIN
+	ALTER DATABASE PureValeWater SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+	DROP DATABASE PureValeWater;
+END;
+GO
+
+-- Create a database
+CREATE DATABASE "PureValeWater";
+GO
+
+-- Change the database to the one just created
+USE "PureValeWater";
+GO
+
+-- Create empty table to hold the data later
+-- Customer Dimension Table
+DROP TABLE IF EXISTS Dim_Customer; -- (DO NOT RUN UNLESS NECESSARY)
 CREATE TABLE Dim_Customer (
    	CustomerId INT PRIMARY KEY,
    	CustomerName VARCHAR(100),
@@ -98,8 +116,10 @@ CREATE TABLE Dim_Customer (
    	EmployeeCount INT,
    	ReturnToSewer_Pct DECIMAL(3,2)
 );
+GO
 
--- 2. Water Usage Fact Table
+-- Water Usage Fact Table
+DROP TABLE IF EXISTS Dim_Customer; -- (DO NOT RUN UNLESS NECESSARY)
 CREATE TABLE Fact_WaterUsage (
     UsageId INT IDENTITY(1,1) PRIMARY KEY, 
     CompanyId INT,
@@ -107,19 +127,40 @@ CREATE TABLE Fact_WaterUsage (
     DailyVolume_m3 INT,
     ReadingType VARCHAR(20),
 );
+Go
+
+-- Price Table
+DROP TABLE IF EXISTS Dim_tariff; -- (DO NOT RUN UNLESS NECESSARY)
+CREATE TABLE Dim_tariff(
+	Region VARCHAR(50) PRIMARY KEY,
+	VolumetricRate_GBP DECIMAL(4,2),
+	DailyFixedCharge_GBP DECIMAL(4,2)
+);
+GO
 
 -- Create new schema call "staging"
+DROP SCHEMA IF EXISTS stg; -- (DO NOT RUN UNLESS NECESSARY)
+GO
 CREATE SCHEMA stg;
 GO
 
 -- Note: CSV data was loaded into the above tables via SSMS Import Wizard.
 
--- 3. Create the Regional Tariff Dimension
-CREATE TABLE Dim_Tariff (
-    Region VARCHAR(50) PRIMARY KEY,
-    VolumetricRate_GBP DECIMAL(4,2),
-    DailyFixedCharge_GBP DECIMAL(4,2)
-);
+-- Transfer data to the tables
+
+-- Customer Data
+INSERT INTO dbo.Dim_Customer (CustomerId, CustomerName, Industry, City, MeterType, EmployeeCount, ReturnToSewer_Pct)
+SELECT CustomerId, CustomerName, Industry, City, MeterType, EmployeeCount, ReturnToSewer_Pct
+FROM stg.PureVale_Water_Customers_Temp;
+GO
+
+-- Usage data
+INSERT INTO dbo.Fact_waterUsage (CompanyId, ReadingDate, DailyVolume_m3, ReadingType)
+SELECT CompanyId, ReadingDate, DailyVolume_m3, ReadingType
+FROM stg.Fact_WaterUsage_Temp;
+GO
+
+
 
 
 
