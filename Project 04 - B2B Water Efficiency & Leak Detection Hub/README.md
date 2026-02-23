@@ -160,7 +160,11 @@ SELECT CompanyId, ReadingDate, DailyVolume_m3, ReadingType
 FROM stg.Fact_WaterUsage_Temp;
 GO
 
-
+\*
+We can drop Temporaty Tables if needed 
+DROP TABLE Dim_Customer_Temp;
+DROP TABLE Fact_WaterUsage_Temp;
+*\
 
 
 
