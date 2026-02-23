@@ -252,7 +252,7 @@ Rather than just summing up volume, I wanted to demonstrate accurate financial m
 Total Volume (m3) = SUM(Fact_WaterUsage[DailyVolume_m3])
 ```
 
-***The Financial Cost***
+**The Financial Cost**
 
 ```dax
 Total Volume (m3) = SUM(Fact_WaterUsage[DailyVolume_m3])
@@ -263,6 +263,30 @@ SUMX(
     (Fact_WaterUsage[DailyVolume_m3] * RELATED(Dim_Tariff[VolumetricRate_GBP])) 
     + RELATED(Dim_Tariff[DailyFixedCharge_GBP])
 )
+```
+
+**Water Intensity (Efficiency Benchmark)**
+
+```dax
+Water Intensity (m3 per FTE) = 
+DIVIDE([Total Volume (m3)], MAX(Dim_Customer[EmployeeCount]))
+```
+
+**The 14-Day Rolling Average**
+
+```dax
+14-Day Avg Volume = 
+AVERAGEX(
+    DATESINPERIOD(Dim_Date[Date], LASTDATE(Dim_Date[Date]), -14, DAY),
+    [Total Volume (m3)]
+)
+```
+
+**The Leak Detector**
+
+```dax
+Leak Alert Color = 
+IF([Total Volume (m3)] > ([14-Day Avg Volume] * 1.20), "Red", "Blue")
 ```
 
 
