@@ -267,12 +267,18 @@ SUMX(
 
 **Water Intensity (Efficiency Benchmark)**
 
+To normalize the data and allow for fair benchmarking between large and small companies, I created a "Water Intensity" metric based on employee headcount.
+
 ```dax
 Water Intensity (m3 per FTE) = 
 DIVIDE([Total Volume (m3)], MAX(Dim_Customer[EmployeeCount]))
 ```
 
 **The 14-Day Rolling Average**
+
+Account Managers need to know immediately if a customer has a potential leak so they can warn them and save them money.
+
+I wrote a DAX measure that calculates a 14-day rolling average of daily consumption. I then created a secondary "Flag" measure. If a customer's usage on any given day spikes more than 20% above their 14-day average, the formula flags it.
 
 ```dax
 14-Day Avg Volume = 
@@ -281,14 +287,10 @@ AVERAGEX(
     [Total Volume (m3)]
 )
 ```
-
-**The Leak Detector**
-
 ```dax
 Leak Alert Color = 
 IF([Total Volume (m3)] > ([14-Day Avg Volume] * 1.20), "Red", "Blue")
 ```
-
 
 # 👉 Still progressing — will be released by 5 PM on 23rd.
 
