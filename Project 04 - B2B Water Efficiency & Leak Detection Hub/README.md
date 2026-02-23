@@ -75,9 +75,9 @@ I handled the data ingestion using SQL Server Management Studio (SSMS).
 
 ## 2. Dynamic Tariff Modeling (Commercial Logic)
 
-One of the main goals of this project was to simulate real-world B2B utility billing. Real water companies don't charge a single flat rate for every customer across the country (as I found out). 
+One of the main goals of this project was to simulate real-world B2B utility billing. Real water companies don't charge a single flat rate for every customer across the country. 
 
-To handle this, I manually created a `Dim_Tariff` table directly in SQL. This table stores specific volumetric rates and daily fixed charges based on different UK regions (Anglian, Northumbrian, Thames). By mapping our customer cities to these regions, I built a foundation that allows Power BI to calculate highly accurate, localized financial costs.
+To handle this, I manually created a `Dim_Tariff` table directly in SQL. This table stores specific volumetric rates and daily fixed charges based on different UK regions (Anglian, Northumbrian, Thames). By mapping our customer cities to these regions, I built a foundation that allows Power BI to calculate accurate, localized financial costs.
 
 ## 3. SQL Scripts Used
 
@@ -156,7 +156,7 @@ GO
 
 -- Usage data
 INSERT INTO dbo.Fact_waterUsage (CompanyId, ReadingDate, DailyVolume_m3, ReadingType)
-SELECT CompanyId, ReadingDate, DailyVolume_m3, ReadingType
+SELECT CompanyId, CAST (ReadingDate AS DATE), DailyVolume_m3, ReadingType
 FROM stg.Fact_WaterUsage_Temp;
 GO
 
@@ -166,19 +166,80 @@ DROP TABLE stg.PureVale_Water_Customers_Temp;
 DROP TABLE stg.Fact_WaterUsage_Temp;
 */
 
+-- Insert our mock UK pricing directly into the Tariff table
+INSERT INTO Dim_Tariff (Region, VolumetricRate_GBP, DailyFixedCharge_GBP)
+VALUES 
+    ('Anglian', 1.75, 0.50),       
+    ('Northumbrian', 1.45, 0.40),  
+    ('Thames', 1.60, 0.65);
+GO
+
+-- Create the Master Reporting View
+
+/*This view joins the Star Schema together and applies business logic to
+map cities to their correct pricing regions before the data hits Power BI.*/
+
+CREATE VIEW vw_Reporting_Master AS
+SELECT 
+	f.ReadingDate,
+    c.CustomerName,
+    c.Industry,
+    c.City,
+    c.MeterType,
+    c.EmployeeCount,
+    c.ReturnToSewer_Pct,
+    f.DailyVolume_m3,
+    f.ReadingType,
+	CASE -- Construct region name column
+		WHEN c.City IN ('Ipswich', 'Peterborough', 'Norwich', 'Colchester') THEN 'Anglian'
+		WHEN c.City IN ('Sunderland', 'Darlington') THEN 'Northumbrian'
+        WHEN c.City = 'Windsor' THEN 'Thames'
+		ELSE 'Other'
+	END AS RegionName
+FROM Fact_waterUsage f
+JOIN Dim_Customer c ON f.CompanyId = c.CustomerId;
+GO
+
+```
+
+## 📊 Phase 3: Business Intelligence (Power BI & DAX)
+
+With the data cleaned and structured in SQL, the final step was to build the reporting layer. I connected Power BI to the SQL Server database to create an interactive, self-service tool for PureVale's Account Managers. 
+
+![Diagram](https://github.com/TechPodx/Style-Repo/blob/681030d6ed44cef549deed316b5162503f41f26e/Images/SQL%20Server%20Connection.png) 
+
+The goal here was to move beyond basic reporting and build a tool that actually drives business value: highlighting inefficiencies, calculating accurate costs, and proactively catching leaks.
+
+## 1. Data Modeling & Power Query
 
 
+Before writing any calculations, I finalized the data model. Using Power Query, I mapped the customer cities to their correct utility regions. In the Model View, I connected the tables into a standard Star Schema, linking the `Fact_WaterUsage` table to the `Dim_Customer` and `Dim_Tariff` tables using one-to-many relationships. 
 
+To handle time-intelligence calculations, I also generated a dedicated `Dim_Date` table using DAX.
+
+## 2. Dashboard Design & Stakeholder UX
+The dashboard is split into two targeted pages:
+* **Executive Overview:** Designed for high-level monitoring. It features KPI cards for total volume and revenue, alongside donut charts breaking down network efficiency by Industry Type and tracking data quality (Actual vs. Estimated reads).
+* **Account Manager Self-Service (Leak Detection):** A deep-dive page where Account Managers can select specific clients to review their daily consumption trends and benchmark their efficiency against similar-sized companies.
+
+## 3. Key DAX Calculations
+To answer the core business questions, I wrote several DAX measures. 
+
+Rather than just summing up volume, I wanted to demonstrate accurate financial modeling. I used `SUMX` and `RELATED` to iterate through the fact table, multiplying daily usage by the specific regional rates stored in the Tariff dimension.
+
+```dax
+Total Volume (m3) = SUM(Fact_WaterUsage[DailyVolume_m3])
+
+Total Cost (£) = 
+SUMX(
+    Fact_WaterUsage,
+    (Fact_WaterUsage[DailyVolume_m3] * RELATED(Dim_Tariff[VolumetricRate_GBP])) 
+    + RELATED(Dim_Tariff[DailyFixedCharge_GBP])
+)
+```
 
 
 # 👉 Still progressing — will be released by 5 PM on 23rd.
-
-
-
-
-
-
-
 
 
 
