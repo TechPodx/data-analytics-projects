@@ -212,10 +212,25 @@ The goal here was to move beyond basic reporting and build a tool that actually 
 
 ### 1. Data Modeling & Power Query
 
+Before writing any calculations, I finalized the data model. Using Power Query, I mapped the customer cities to their correct utility regions. 
 
-Before writing any calculations, I finalized the data model. Using Power Query, I mapped the customer cities to their correct utility regions. In the Model View, I connected the tables into a standard Star Schema, linking the `Fact_WaterUsage` table to the `Dim_Customer` and `Dim_Tariff` tables using one-to-many relationships. 
+![Diagram](https://github.com/TechPodx/Style-Repo/blob/main/Images/Region%20Column.png)
+
+In the Model View, I connected the tables into a standard Star Schema, linking the `Fact_WaterUsage` table to the `Dim_Customer` and `Dim_Tariff` tables using one-to-many relationships. 
+
+![Diagram](https://github.com/TechPodx/Style-Repo/blob/main/Images/Model%20View.png)
 
 To handle time-intelligence calculations, I also generated a dedicated `Dim_Date` table using DAX.
+
+```dax
+Dim_Date = 
+ADDCOLUMNS(
+    CALENDAR(MIN(Fact_waterUsage[ReadingDate]), MAX(Fact_waterUsage[ReadingDate])),
+    "YEAR", YEAR([Date]),
+    "Month Name", FORMAT([DATE], "MMMM"),
+    "Month Number", MONTH([Date])
+)
+```
 
 ### 2. Dashboard Design & Stakeholder UX
 The dashboard is split into two targeted pages:
