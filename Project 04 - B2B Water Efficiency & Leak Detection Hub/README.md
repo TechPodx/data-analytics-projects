@@ -298,7 +298,7 @@ Leak Alert Color =
 IF([Total Volume (m3)] > ([14-Day Avg Volume] * 1.20), "Red", "Blue")
 ```
 
-# 👉 Still progressing — will be released on 23rd.
+
 
 
 
