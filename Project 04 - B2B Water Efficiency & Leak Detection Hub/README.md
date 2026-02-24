@@ -1,6 +1,8 @@
 # 💧PureVale Water B2B Efficiency & Leak Detection Hub
 **Mock Company:** PureVale Water (Simulating B2B Water Retailer Operations)
 
+![project](https://github.com/TechPodx/Style-Repo/blob/1a85354fcd4aa0974c842efdbf58562f2c65b030/Images/PureValeproject_1.gif)
+
 ## 📄 Phase 1: Business Requirements & Governance Document
 
 ### 1. Project Objective
