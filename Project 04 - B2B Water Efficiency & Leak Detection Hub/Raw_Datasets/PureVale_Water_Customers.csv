@@ -1,0 +1,21 @@
+CustomerId,CustomerName,Industry,City,MeterType,EmployeeCount,ReturnToSewer_Pct
+1,Midlands Distribution Hub Ltd,Manufacturing & Industrial,Ipswich,Smart,655,0.88
+2,Silverline Accountancy Partners,Manufacturing & Industrial,Peterborough,Manual,1447,0.9
+3,FreshMart Superstore,Agriculture & Environment,Sunderland,Smart,834,0.96
+4,Thameside Home & Garden Retail,Retail & Logistics,Peterborough,Smart,651,0.88
+5,The Willowbrook Hotel & Spa,Retail & Logistics,Norwich,Smart,649,0.86
+6,Blue Anchor Pub & Kitchen,Manufacturing & Industrial,Darlington,Smart,100,0.88
+7,Greenfield Food Processing Ltd,Retail & Logistics,Peterborough,Smart,1422,0.86
+8,Northshore Packaging Solutions,Retail & Logistics,Ipswich,Smart,151,0.98
+9,Midlands Distribution Hub Ltd,Manufacturing & Industrial,Ipswich,Smart,173,0.92
+10,Northgate Veterinary Clinic,Healthcare & Education,Windsor,Manual,399,0.99
+11,Blue Anchor Pub & Kitchen,Manufacturing & Industrial,Norwich,Smart,1410,0.85
+12,Midlands Distribution Hub Ltd,Healthcare & Education,Windsor,Smart,1364,0.95
+13,Eastgate Financial Services Ltd,Hospitality & Leisure,Ipswich,Smart,1491,0.92
+14,Oakridge Holiday Park,Manufacturing & Industrial,Sunderland,Smart,1370,0.89
+15,Meadowbrook Organic Farms,Hospitality & Leisure,Colchester,Smart,1016,0.92
+16,The Old Mill Café & Bakery,Agriculture & Environment,Peterborough,Smart,756,0.86
+17,Greenfield Food Processing Ltd,Manufacturing & Industrial,Peterborough,Manual,1116,0.91
+18,Greenfield Food Processing Ltd,Manufacturing & Industrial,Peterborough,Smart,554,0.89
+19,Thameside Home & Garden Retail,Hospitality & Leisure,Darlington,Smart,507,0.9
+20,Silverline Accountancy Partners,Agriculture & Environment,Norwich,Manual,1256,0.92
