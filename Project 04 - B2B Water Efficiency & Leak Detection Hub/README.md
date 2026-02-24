@@ -239,8 +239,12 @@ ADDCOLUMNS (
 The dashboard is split into two targeted pages:
 
 * **Executive Overview:** Designed for high-level monitoring. It features KPI cards for total volume and revenue, alongside donut charts breaking down network efficiency by Industry Type and tracking data quality (Actual vs. Estimated reads).
+
+![overview](https://github.com/TechPodx/Style-Repo/blob/main/Gif/Exc_view.gif)
   
 * **Account Manager Self-Service (Leak Detection):** A deep-dive page where Account Managers can select specific clients to review their daily consumption trends and benchmark their efficiency against similar-sized companies.
+
+![overview](https://github.com/TechPodx/Style-Repo/blob/main/Gif/leak_view.gif)
 
 ### 3. Key DAX Measures
 
